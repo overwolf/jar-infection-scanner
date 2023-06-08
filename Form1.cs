@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -37,22 +38,41 @@ namespace JarInfectionScanner {
       try {
         await Task.Run(() => {
           AddOutputLine("Searching for files (this may take a while) ...");
+          long time = DateTimeOffset.Now.ToUnixTimeSeconds();
 
-          string[] jarFiles =
-            Directory.GetFiles(directory, "*.jar", SearchOption.AllDirectories);
+          List<string> jarFiles = new List<string>();
+          Stack<string> paths = new Stack<string>();
+          paths.Push(directory);
+          
+          while (paths.Count > 0) {
+            string path = paths.Pop();
+            try {
+              long currentTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+              if (currentTime > time + 60) {
+                time = currentTime;
+                AddOutputLine($"Searching {path}");
+              }
+              foreach (string subDirectory in Directory.GetDirectories(path).Reverse()) {
+                paths.Push(subDirectory);
+              }
+              jarFiles.AddRange(Directory.GetFiles(path, "*.jar"));
+            } catch (Exception ex) {
+              AddOutputLine(ex.Message);
+            }
+          }
 
           int detectionsFound = 0;
 
-          for (int i = 0; i < jarFiles.Length; ++i) {
+          for (int i = 0; i < jarFiles.Count; ++i) {
             string jarFile = jarFiles[i];
-            AddOutputLine($"[{i + 1}/{jarFiles.Length}] Scanning {jarFile} ...");
+            AddOutputLine($"[{i + 1}/{jarFiles.Count}] Scanning {jarFile} ...");
 
             if (CheckJarFile(jarFile)) {
               detectionsFound++;
             }
 
             this.BeginInvoke(new Action(() => {
-              progressBar.Value = (int)Math.Floor((i/(float)jarFiles.Length)*100);
+              progressBar.Value = (int)Math.Floor((i/(float)jarFiles.Count)*100);
             }));
           }
 
@@ -75,18 +95,10 @@ namespace JarInfectionScanner {
     }
 
     private void buttonBrowse_Click(object sender, EventArgs e) {
-      OpenFileDialog openFileDialog = new OpenFileDialog();
-      openFileDialog.ValidateNames = false;
-      openFileDialog.CheckFileExists = false;
-      openFileDialog.CheckPathExists = true;
-      openFileDialog.FileName = "Select Folder";
+      FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
 
-      // Customize dialog appearance
-      openFileDialog.Title = "Select a Folder";
-      openFileDialog.Filter = "Folders|no_files.please";
-
-      if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-        textBoxFolderFile.Text = Path.GetDirectoryName(openFileDialog.FileName);
+      if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK) {
+        textBoxFolderFile.Text = folderBrowserDialog.SelectedPath;
       }
     }
 
