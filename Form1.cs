@@ -1,4 +1,5 @@
 ﻿using ICSharpCode.SharpZipLib.Zip;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,18 +101,13 @@ namespace JarInfectionScanner {
     }
 
     private void buttonBrowse_Click(object sender, EventArgs e) {
-      OpenFileDialog openFileDialog = new OpenFileDialog();
-      openFileDialog.ValidateNames = false;
-      openFileDialog.CheckFileExists = false;
-      openFileDialog.CheckPathExists = true;
-      openFileDialog.FileName = "Select Folder";
+      var dialog = new CommonOpenFileDialog {
+        IsFolderPicker = true,
+        Title = "Select a Folder"
+      };
 
-      // Customize dialog appearance
-      openFileDialog.Title = "Select a Folder";
-      openFileDialog.Filter = "Folders|no_files.please";
-
-      if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-        textBoxFolderFile.Text = Path.GetDirectoryName(openFileDialog.FileName);
+      if (dialog.ShowDialog() == CommonFileDialogResult.Ok) {
+        textBoxFolderFile.Text = dialog.FileName;
       }
     }
 
