@@ -1,11 +1,10 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Linq;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace JarInfectionScanner {
   public partial class Form1 : Form {
@@ -46,17 +45,14 @@ namespace JarInfectionScanner {
           addFiles(directory, jarFiles);
 
           int i = 0;
-          foreach (var jarFile in jarFiles)
-          {
+          foreach (var jarFile in jarFiles) {
             AddOutputLine($"[{i + 1}/{jarFiles.Count()}] Scanning {jarFile} ...");
 
-            if (CheckJarFile(jarFile))
-            {
+            if (CheckJarFile(jarFile)) {
               detectionsFound++;
             }
 
-            this.BeginInvoke(new Action(() =>
-            {
+            this.BeginInvoke(new Action(() => {
               progressBar.Value = (int)Math.Floor((i / (float)jarFiles.Count()) * 100);
             }));
 
@@ -81,21 +77,15 @@ namespace JarInfectionScanner {
       }
     }
 
-    private void addFiles(string path, IList<string> files)
-    {
-      try
-      {
-        foreach (string file in Directory.GetFiles(path, "*.jar"))
-        {
+    private void addFiles(string path, IList<string> files) {
+      try {
+        foreach (string file in Directory.GetFiles(path, "*.jar")) {
           files.Add(file);
         }
-        foreach (string dir in Directory.GetDirectories(path))
-        {
+        foreach (string dir in Directory.GetDirectories(path)) {
           addFiles(dir, files);
         }
-      }
-      catch (UnauthorizedAccessException)
-      {
+      } catch (UnauthorizedAccessException) {
         AddOutputLine($"Encountered unaccesible file in {path}");
       }
     }
