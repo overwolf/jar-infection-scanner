@@ -82,7 +82,7 @@ namespace JarInfectionScanner {
       };
 
       if (dialog.ShowDialog() == CommonFileDialogResult.Ok) {
-        textBoxFolderFile.Text = Path.GetDirectoryName(dialog.FileName);
+        textBoxFolderFile.Text = dialog.FileName;
       }
     }
 
