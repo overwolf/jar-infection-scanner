@@ -75,7 +75,7 @@ namespace JarInfectionScanner
           int detectionsFound = 0;
 
           List<Task> tasks = new List<Task>();
-          long i = 1;
+          long i = 0;
           foreach (string jarFile in jarFiles)
           {
               tasks.Add(Task.Run(async () =>
@@ -95,7 +95,7 @@ namespace JarInfectionScanner
                 }
                 
                 this.BeginInvoke(new Action(() => {
-                  progressBar.Value = (int)Math.Floor((Interlocked.Read(ref i)-1)/(float)jarFiles.Length*100);
+                  progressBar.Value = (int)Math.Floor(Interlocked.Read(ref i)/(float)jarFiles.Length*100);
                 }));
               }));
           }
