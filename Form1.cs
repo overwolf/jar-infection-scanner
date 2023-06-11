@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ICSharpCode.SharpZipLib.Zip;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace JarInfectionScanner {
   public partial class Form1 : Form {
@@ -42,7 +43,7 @@ namespace JarInfectionScanner {
           int detectionsFound = 0;
 
           var jarFiles = new List<string>();
-          addFiles(directory, jarFiles);
+          AddFiles(directory, jarFiles);
 
           int i = 0;
           foreach (var jarFile in jarFiles) {
@@ -52,7 +53,7 @@ namespace JarInfectionScanner {
               detectionsFound++;
             }
 
-            this.BeginInvoke(new Action(() => {
+            BeginInvoke(new Action(() => {
               progressBar.Value = (int)Math.Floor((i / (float)jarFiles.Count()) * 100);
             }));
 
@@ -61,7 +62,7 @@ namespace JarInfectionScanner {
 
           AddOutputLine("Scan Complete");
 
-          this.BeginInvoke(new Action(() => {
+          BeginInvoke(new Action(() => {
             if (detectionsFound > 0) {
               labelStatus.Text = $"Scan complete - found {detectionsFound} infected files";
             } else {
@@ -77,13 +78,13 @@ namespace JarInfectionScanner {
       }
     }
 
-    private void addFiles(string path, IList<string> files) {
+    private void AddFiles(string path, IList<string> files) {
       try {
         foreach (string file in Directory.GetFiles(path, "*.jar")) {
           files.Add(file);
         }
         foreach (string dir in Directory.GetDirectories(path)) {
-          addFiles(dir, files);
+          AddFiles(dir, files);
         }
       } catch (UnauthorizedAccessException) {
         AddOutputLine($"Encountered unaccesible file in {path}");
