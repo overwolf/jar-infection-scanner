@@ -65,7 +65,7 @@ namespace JarInfectionScanner
         // We want to maximize parallelized scanning, but we don't want to overload the system, so we try to use 75% of the available processors.
         int processorCount = (int)Math.Max(Math.Floor(Environment.ProcessorCount * 0.75), 1);
         SemaphoreSlim semaphore = new SemaphoreSlim(processorCount, processorCount);
-        
+
         await Task.Run(async () =>
         {
           AddOutputLine("Searching for files (this may take a while) ...");
@@ -78,30 +78,32 @@ namespace JarInfectionScanner
           long i = 0;
           foreach (string jarFile in jarFiles)
           {
-              tasks.Add(Task.Run(async () =>
+            tasks.Add(Task.Run(async () =>
+            {
+              try
               {
-                try
+                await semaphore.WaitAsync();
+                AddOutputLine($"[{Interlocked.Increment(ref i)}/{jarFiles.Length}] Scanning {jarFile} ...");
+
+                if (await CheckJarFileAsync(jarFile).ConfigureAwait(false))
                 {
-                  await semaphore.WaitAsync();
-                  AddOutputLine($"[{Interlocked.Increment(ref i)}/{jarFiles.Length}] Scanning {jarFile} ...");
-                  
-                  if (await CheckJarFileAsync(jarFile).ConfigureAwait(false))
-                  {
-                    Interlocked.Increment(ref detectionsFound);
-                  }
-                } finally
-                {
-                  semaphore.Release();
+                  Interlocked.Increment(ref detectionsFound);
                 }
-                
-                this.BeginInvoke(new Action(() => {
-                  progressBar.Value = (int)Math.Floor(Interlocked.Read(ref i)/(float)jarFiles.Length*100);
-                }));
+              }
+              finally
+              {
+                semaphore.Release();
+              }
+
+              this.BeginInvoke(new Action(() =>
+              {
+                progressBar.Value = (int)Math.Floor(Interlocked.Read(ref i) / (float)jarFiles.Length * 100);
               }));
+            }));
           }
-          
+
           await Task.WhenAll(tasks);
-          
+
           AddOutputLine("Scan Complete");
 
           this.BeginInvoke(new Action(() =>
@@ -129,7 +131,7 @@ namespace JarInfectionScanner
     private IEnumerable<string> GetJarFiles(string directory, HashSet<string> alreadySearched = null)
     {
       alreadySearched = alreadySearched ?? new HashSet<string>();
-      
+
       try
       {
         // We don't want to search the same directory twice, so we resolve the final path name and check if we've already searched it
@@ -139,11 +141,11 @@ namespace JarInfectionScanner
         {
           yield break;
         }
-      }catch
+      } catch
       {
         AddErrorLine($"Failed to resolve '{directory}' to a final path name - skipping directory");
       }
-      
+
       string[] files;
       try
       {
@@ -153,12 +155,12 @@ namespace JarInfectionScanner
         files = Array.Empty<string>();
         AddErrorLine($"Failed to get files in directory '{directory}'");
       }
-      
+
       foreach (string file in files)
       {
         yield return file;
       }
-      
+
       string[] directories;
       try
       {
@@ -176,7 +178,6 @@ namespace JarInfectionScanner
           yield return file;
         }
       }
-      
     }
 
     private void buttonBrowse_Click(object sender, EventArgs e)
