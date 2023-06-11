@@ -1,10 +1,10 @@
-﻿using ICSharpCode.SharpZipLib.Zip;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace JarInfectionScanner {
   public partial class Form1 : Form {
@@ -39,22 +39,24 @@ namespace JarInfectionScanner {
         await Task.Run(() => {
           AddOutputLine("Searching for files (this may take a while) ...");
 
-          string[] jarFiles =
-            Directory.GetFiles(directory, "*.jar", SearchOption.AllDirectories);
-
           int detectionsFound = 0;
 
-          for (int i = 0; i < jarFiles.Length; ++i) {
-            string jarFile = jarFiles[i];
-            AddOutputLine($"[{i + 1}/{jarFiles.Length}] Scanning {jarFile} ...");
+          var jarFiles = new List<string>();
+          addFiles(directory, jarFiles);
+
+          int i = 0;
+          foreach (var jarFile in jarFiles) {
+            AddOutputLine($"[{i + 1}/{jarFiles.Count()}] Scanning {jarFile} ...");
 
             if (CheckJarFile(jarFile)) {
               detectionsFound++;
             }
 
             this.BeginInvoke(new Action(() => {
-              progressBar.Value = (int)Math.Floor((i/(float)jarFiles.Length)*100);
+              progressBar.Value = (int)Math.Floor((i / (float)jarFiles.Count()) * 100);
             }));
+
+            i++;
           }
 
           AddOutputLine("Scan Complete");
@@ -72,6 +74,19 @@ namespace JarInfectionScanner {
       } finally {
         buttonScan.Enabled = true;
         buttonClearOutput.Enabled = true;
+      }
+    }
+
+    private void addFiles(string path, IList<string> files) {
+      try {
+        foreach (string file in Directory.GetFiles(path, "*.jar")) {
+          files.Add(file);
+        }
+        foreach (string dir in Directory.GetDirectories(path)) {
+          addFiles(dir, files);
+        }
+      } catch (UnauthorizedAccessException) {
+        AddOutputLine($"Encountered unaccesible file in {path}");
       }
     }
 
