@@ -88,6 +88,8 @@ namespace JarInfectionScanner {
         }
       } catch (UnauthorizedAccessException) {
         AddOutputLine($"Encountered unaccesible file in {path}");
+      } catch (DirectoryNotFoundException) {
+        AddOutputLine($"Encountered invalid path: {path}");
       }
     }
 
@@ -160,5 +162,16 @@ namespace JarInfectionScanner {
 
       return false;
     }
-  }
+
+    private void Form1_Load(object sender, EventArgs e) {
+      if (!string.IsNullOrWhiteSpace(Program.parsedOptions.Path)) {
+        textBoxFolderFile.Text = Program.parsedOptions.Path;
+      } else {
+        textBoxFolderFile.Text = Directory.GetCurrentDirectory();
+      }
+      if (Program.parsedOptions.Scan) {
+        buttonScan_Click(null, null);
+      }
+    }
+    }
 }
